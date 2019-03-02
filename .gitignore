@@ -13,7 +13,7 @@
 # [Aa]ssets/AssetStoreTools*
 
 # Visual Studio cache directory
-.vs/
+/.vs/
 
 # Gradle cache directory
 .gradle/
