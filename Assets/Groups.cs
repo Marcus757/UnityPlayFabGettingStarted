@@ -14,7 +14,7 @@ public class Groups : MonoBehaviour
     public ScrollList existingGroups;
     public ScrollList playersToAdd;
     public ScrollList pendingInvitations;
-    public List<PlayFab.AdminModels.PlayerProfile> allPlayerProfiles;
+    public List<PlayFab.ServerModels.PlayerProfile> allPlayerProfiles;
 
     //private readonly HashSet<KeyValuePair<string, string>> entityGroupPairs = new HashSet<KeyValuePair<string, string>>();
     //private readonly Dictionary<string, string> groupNameById = new Dictionary<string, string>();
@@ -70,23 +70,34 @@ public class Groups : MonoBehaviour
         existingGroups.AddItems();
     }
 
-    public void UpdatePlayersToAddView(List<EntityMemberRole> members, List<PlayFab.AdminModels.PlayerProfile> allPlayerProfiles)
+    public void UpdatePlayersToAddView(List<EntityMemberRole> members, List<PlayFab.ServerModels.PlayerProfile> allPlayerProfiles)
     {
-        var playerIdsInGroup = new List<string>();
-        members.ForEach(role => {
+        var playerEntityKeys = new List<EntityKey>();
+        //members.ForEach(role => {
+        //    role.Members.ForEach(member =>
+        //    {
+        //        playerEntityKeys.Add(member.Key);
+        //    });
+        //});
+
+        members.ForEach(role =>
+        {
             role.Members.ForEach(member =>
             {
-                playerIdsInGroup.Add(member.Lineage["master_player_account"].Id);
+                playerEntityKeys.Add(member.Lineage["master_player_account"]);
             });
         });
 
-
         playersToAdd.itemList = new List<ScrollListItem>();
 
-        var availablePlayerIdsToAdd = allPlayerProfiles.Where(playerProfile => !playerIdsInGroup.Contains(playerProfile.PlayerId)).ToList();
+        var availablePlayerIdsToAdd = allPlayerProfiles.Where(playerProfile => 
+            !playerEntityKeys.Select(entityKeys => entityKeys.Id).Contains(playerProfile.PlayerId)).ToList();
         availablePlayerIdsToAdd.OrderBy(player => player.DisplayName).ToList().ForEach(player =>
         {
-            var scrollListItem = new ScrollListItem() { displayText = player.PlayerId };
+            var scrollListItem = new ScrollListItem()
+            {
+                displayText = string.IsNullOrEmpty(player.DisplayName) ? player.PlayerId : player.DisplayName
+        };
             playersToAdd.itemList.Add(scrollListItem);
         });
 
@@ -95,13 +106,13 @@ public class Groups : MonoBehaviour
 
     private ScrollListItem GetSelectedItemFromScrollList(string viewName)
     {
-        Transform scrollList = GameObject.Find(viewName).transform.Find("Viewport").Find("Content");
+        ToggleGroup toggleGroup = GameObject.Find(viewName).transform.Find("Viewport").Find("Content").Find("ToggleGroup").GetComponent<ToggleGroup>();
         List<ScrollListItem> scrollListItems = new List<ScrollListItem>();
 
-        foreach (Transform item in scrollList)
-            scrollListItems.Add(item.GetComponent<ScrollListItem>());
+        foreach (Transform item in toggleGroup.transform)
+            scrollListItems.Add(item.GetComponentInChildren<ScrollListItem>());
 
-        return scrollListItems.Find(scrollListItem => scrollListItem.IsSelected());
+        return scrollListItems.Find(scrollListItem => scrollListItem.GetComponent<UnityEngine.UI.Toggle>().isOn);
     }
 
     public void RefreshPlayersToAddView()
@@ -114,12 +125,15 @@ public class Groups : MonoBehaviour
         var segment = result.Segments.Find(x => x.Name == "All Players");
         if (segment != null)
         {
-            var request = new PlayFab.AdminModels.GetPlayersInSegmentRequest { SegmentId = segment.Id };
-            PlayFabAdminAPI.GetPlayersInSegment(request, OnGetAllPlayersSuccess, OnSharedError);
+            var request = new ListGroupMembersRequest() { Group = segment.  };
+
+            var request = new PlayFab.ServerModels.GetPlayersInSegmentRequest { SegmentId = segment.Id };
+
+            PlayFabServerAPI.GetPlayersInSegment(request, OnGetAllPlayersSuccess, OnSharedError);
         }
     }
 
-    private void OnGetAllPlayersSuccess(PlayFab.AdminModels.GetPlayersInSegmentResult result)
+    private void OnGetAllPlayersSuccess(PlayFab.ServerModels.GetPlayersInSegmentResult result)
     {
         allPlayerProfiles = result.PlayerProfiles;
 
@@ -145,11 +159,23 @@ public class Groups : MonoBehaviour
         var selectedPlayer = GetSelectedItemFromScrollList("PlayersView");
         var selectedGroup = GetSelectedItemFromScrollList("ExistingGroupsView");
 
-        if (selectedPlayer)
+        if (selectedPlayer && selectedGroup)
         {
-            var request = new InviteToGroupRequest() { Group = selectedGroup.entityKey, Entity = selectedPlayer.entityKey };
-            PlayFabGroupsAPI.InviteToGroup(request, OnInviteToGroupSuccess, OnSharedError);
+            var request = new PlayFab.ServerModels.GetUserAccountInfoRequest() { PlayFabId = selectedPlayer.displayText };
+            PlayFabServerAPI.GetUserAccountInfo(request, OnGetUserAccountInfoSuccess, OnSharedError);
         }
+    }
+
+    private void OnGetUserAccountInfoSuccess(PlayFab.ServerModels.GetUserAccountInfoResult result)
+    {
+        var selectedGroup = GetSelectedItemFromScrollList("ExistingGroupsView");
+        var selectedPlayerEntityKey = result.UserInfo.TitleInfo.TitlePlayerAccount;
+
+        var request = new InviteToGroupRequest()
+        {
+            Group = selectedGroup.entityKey, Entity = new EntityKey() { Id = selectedPlayerEntityKey.Id, Type = selectedPlayerEntityKey.Type }
+        };
+        PlayFabGroupsAPI.InviteToGroup(request, OnInviteToGroupSuccess, OnSharedError);
     }
 
     private void OnInviteToGroupSuccess(InviteToGroupResponse response)
