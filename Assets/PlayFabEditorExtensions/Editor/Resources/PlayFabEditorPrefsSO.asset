@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: PlayFabEditorPrefsSO
   m_EditorClassIdentifier: 
   DevAccountEmail: v-manixo@microsoft.com
-  DevAccountToken: m131xs581s48sz5o9kperrmxttj6dgz98o5iweh4r8yzdf4j3bso75osnu4gejtig5npqcykqyzqg5pni6ygpbo1erwbctckrm4fq8idqcysbfq6mriuy6yggytiiby446pteize5rbwi75jdmcjbji8x7g1xin7wcn9s6cg3k736r58tuzepriugmcdqki3n4xg7eon
+  DevAccountToken: 5g18pitkf6gep9m8b1n366zxfpe41jnccx8ojw87jdx668xxzhcwmc798prizc7z1r55muq8mowbixxdzuiwffz7jmbo5cun8qby7jeagnun5nrupd536e37y9f1xb8fkc8g6xxaqpgfsbqgqpks9btoifdzis4g1kxhdsd7rndykbdx545xq7zmnsun39nipyjh81i1
   SelectedStudio: My Game Studio
   SdkPath: Assets/PlayFabSdk
   EdExPath: 

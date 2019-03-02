@@ -9,6 +9,8 @@ using PlayFab.AuthenticationModels;
 
 public class GameController : MonoBehaviour
 {
+    public Authentication authentication;
+
     public Text scoreText;
     private int score;
     public GameObject loginPanel;
@@ -19,10 +21,13 @@ public class GameController : MonoBehaviour
     private string username;
     private static string entityId;
     private static string entityType;
+    private Dictionary<string, FunctionCaller> apiDictionary;
 
     // Use this for initialization
     void Start () {
         //scoreText.text = "Score: " + score;
+                
+        LoadApiDictionary();
 	}
 	
 	// Update is called once per frame
@@ -30,56 +35,21 @@ public class GameController : MonoBehaviour
 		
 	}
 
-    // Logs in user as a guest
-    public void LoginAsGuest()
+    private void LoadApiDictionary()
     {
-        var request = new LoginWithCustomIDRequest
-        {
-            CustomId = System.Guid.NewGuid().ToString(),
-            CreateAccount = true
-        };
-        PlayFabClientAPI.LoginWithCustomID(request, OnGuestLoginSuccess, OnGuestLoginFailure);
-    }
+        apiDictionary = new Dictionary<string, FunctionCaller>();
 
-    // Logs in user with PlayFab id
-    public void LoginAsUser()
-    {
-        var username = loginPanel.transform.Find("RegisteredGamersPanel").Find("UsernameInputField").GetComponent<InputField>();
-        var password = loginPanel.transform.Find("RegisteredGamersPanel").Find("PasswordInputField").GetComponent<InputField>();
-        var request = new LoginWithPlayFabRequest {  Username = username.text, Password = password.text };
-        PlayFabClientAPI.LoginWithPlayFab(request, OnUserLoginSuccess, OnUserLoginFailure);
-    }
+        FunctionCaller loginGuest = new FunctionCaller() { };
+        loginGuest.functionNoParams = authentication.Login;
+        apiDictionary.Add("Login as guest", loginGuest);
+        apiDictionary["Login as guest"].functionNoParams.Invoke();
 
-    private void OnGuestLoginSuccess(LoginResult result)
-    {
-        Debug.Log("Login Successful");
-        loginPanel.active = false;
-        registrationPanel.active = true;
-        username = result.PlayFabId;
+        FunctionCaller loginUser = new FunctionCaller();
+        loginUser.function2Params = (username, password) => authentication.Login(username, password);
+        apiDictionary.Add("Login user with id", loginUser);
+        apiDictionary["Login user with id"].function2Params.Invoke("Marcus757", "uncc2007");
     }
-
-    private void OnGuestLoginFailure(PlayFabError error)
-    {
-        Debug.LogError("Login Failure");
-        Debug.LogError(error.GenerateErrorReport());
-        ShowError(error);
-    }
-
-    private void OnUserLoginSuccess(LoginResult result)
-    {
-        Debug.Log("Login Successful");
-        loginPanel.active = false;
-        username = result.PlayFabId;
-        ShowGame();
-    }
-
-    private void OnUserLoginFailure(PlayFabError error)
-    {
-        Debug.LogError("Login Failure");
-        Debug.LogError(error.GenerateErrorReport());
-        ShowError(error);
-    }
-
+    
     public void CreateAccount()
     {
         var emailField = registrationPanel.transform.Find("EmailInputField").GetComponent<InputField>();
