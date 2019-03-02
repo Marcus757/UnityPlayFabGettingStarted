@@ -125,10 +125,7 @@ public class Groups : MonoBehaviour
         var segment = result.Segments.Find(x => x.Name == "All Players");
         if (segment != null)
         {
-            var request = new ListGroupMembersRequest() { Group = segment.  };
-
             var request = new PlayFab.ServerModels.GetPlayersInSegmentRequest { SegmentId = segment.Id };
-
             PlayFabServerAPI.GetPlayersInSegment(request, OnGetAllPlayersSuccess, OnSharedError);
         }
     }
