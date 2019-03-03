@@ -10,6 +10,9 @@ using PlayFab.AuthenticationModels;
 public class GameController : MonoBehaviour
 {
     public Authentication authentication;
+    public Dropdown functionDropdown;
+    public GameObject parameters;
+    public GameObject parameterPrefab;
 
     public Text scoreText;
     private int score;
@@ -25,10 +28,10 @@ public class GameController : MonoBehaviour
 
     // Use this for initialization
     void Start () {
-        //scoreText.text = "Score: " + score;
-                
         LoadApiDictionary();
-	}
+        LoadDropDown();
+        OnValueChangedDropDown();
+    }
 	
 	// Update is called once per frame
 	void Update () {
@@ -42,56 +45,82 @@ public class GameController : MonoBehaviour
         FunctionCaller loginGuest = new FunctionCaller() { };
         loginGuest.functionNoParams = authentication.Login;
         apiDictionary.Add("Login as guest", loginGuest);
-        apiDictionary["Login as guest"].functionNoParams.Invoke();
 
         FunctionCaller loginUser = new FunctionCaller();
         loginUser.function2Params = (username, password) => authentication.Login(username, password);
+        loginUser.parameters.Add("Username");
+        loginUser.parameters.Add("Password");
         apiDictionary.Add("Login user with id", loginUser);
-        apiDictionary["Login user with id"].function2Params.Invoke("Marcus757", "uncc2007");
+
+        FunctionCaller createAccount = new FunctionCaller();
+        createAccount.function3Params = (email, username, password) => authentication.CreateAccount(email, username, password);
+        createAccount.parameters.Add("Email");
+        createAccount.parameters.Add("Username");
+        createAccount.parameters.Add("Password");
+        apiDictionary.Add("Create account with email", createAccount);
     }
     
-    public void CreateAccount()
+    private void LoadDropDown()
     {
-        var emailField = registrationPanel.transform.Find("EmailInputField").GetComponent<InputField>();
-        var usernameField = registrationPanel.transform.Find("UsernameInputField").GetComponent<InputField>();
-        var passwordField = registrationPanel.transform.Find("PasswordInputField").GetComponent<InputField>();
+        functionDropdown.AddOptions(apiDictionary.Keys.ToList());
+    }
 
-        var request = new AddUsernamePasswordRequest
+    public void OnValueChangedDropDown()
+    {
+        DestroyChildren();
+        FunctionCaller function = GetFunction();
+        function.parameters.ForEach(param => 
         {
-            Email = emailField.text,
-            Username = usernameField.text,
-            Password = passwordField.text
-        };
-        PlayFabClientAPI.AddUsernamePassword(request, OnAddUsernamePasswordSuccess, OnAddUsernamePasswordFailure);
+            GameObject instance = Instantiate(parameterPrefab);
+            var placeholderText = instance.transform.Find("Placeholder").GetComponent<Text>();
+            placeholderText.text = param;
+            instance.transform.SetParent(parameters.transform);
+        });
     }
 
-    private void OnAddUsernamePasswordSuccess(AddUsernamePasswordResult result)
+    public void DestroyChildren()
     {
-        registrationPanel.active = false;
-        username = result.Username;
-        ShowGame();
+        foreach (Transform child in parameters.transform)
+            Destroy(child.gameObject);
     }
 
-    private void OnAddUsernamePasswordFailure(PlayFabError error)
+
+    public void OnClickExecute()
     {
-        Debug.Log("Create account failure");
-        Debug.LogError(error.GenerateErrorReport());
-        registrationPanel.active = false;
-        errorPanel.active = true;
-        ShowError(error);
+        FunctionCaller function = GetFunction();
+        string param1, param2, param3;
+
+        switch (function.parameters.Count)
+        {
+            case 1:
+                param1 = parameters.transform.GetChild(0).Find("Text").GetComponent<Text>().text;
+                function.function1Param.Invoke(param1);
+                break;
+            case 2:
+                param1 = parameters.transform.GetChild(0).Find("Text").GetComponent<Text>().text;
+                param2 = parameters.transform.GetChild(1).Find("Text").GetComponent<Text>().text;
+                function.function2Params.Invoke(param1, param2);
+                break;
+            case 3:
+                param1 = parameters.transform.GetChild(0).Find("Text").GetComponent<Text>().text;
+                param2 = parameters.transform.GetChild(1).Find("Text").GetComponent<Text>().text;
+                param3 = parameters.transform.GetChild(2).Find("Text").GetComponent<Text>().text;
+                function.function3Params.Invoke(param1, param2, param3);
+                break;
+            default:
+                function.functionNoParams.Invoke();
+                break;
+        }
     }
 
-    private void ShowError(PlayFabError error)
+    private FunctionCaller GetFunction()
     {
-        var errorMessage = errorPanel.transform.Find("ErrorMessage").GetComponent<Text>();
-        errorMessage.text = error.ErrorMessage;
+        var functionName = functionDropdown.options.ElementAt(functionDropdown.value).text;
+        return apiDictionary[functionName];
     }
 
-    public void ContinueAsGuest()
-    {
-        registrationPanel.active = false;
-        ShowGame();
-    }
+
+    
 
     public void ShowGame()
     {

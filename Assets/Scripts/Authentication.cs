@@ -6,6 +6,7 @@ using UnityEngine;
 
 public class Authentication : MonoBehaviour
 {
+
     // Logs in user as a guest
     public void Login()
     {
@@ -14,24 +15,53 @@ public class Authentication : MonoBehaviour
             CustomId = System.Guid.NewGuid().ToString(),
             CreateAccount = true
         };
-        PlayFabClientAPI.LoginWithCustomID(request, OnGuestLoginSuccess, OnSharedError);
+        PlayFabClientAPI.LoginWithCustomID(request, 
+            delegate(LoginResult result)
+            {
+                Debug.Log("Guest login successful");
+            }, 
+            OnSharedError);
     }
 
     // Logs in user with PlayFab id
     public void Login(string username, string password)
     {
         var request = new LoginWithPlayFabRequest { Username = username, Password = password };
-        PlayFabClientAPI.LoginWithPlayFab(request, OnUserLoginSuccess, OnSharedError);
-    }
-
-    private void OnGuestLoginSuccess(LoginResult result)
-    {
-        Debug.Log("Guest login successful");
+        PlayFabClientAPI.LoginWithPlayFab(request, 
+            delegate (LoginResult result)
+            {
+                Debug.Log("User: " + result.PlayFabId + " login successful");
+            },
+            OnSharedError);
     }
     
-    private void OnUserLoginSuccess(LoginResult result)
+
+    public void CreateAccount(string email, string username, string password)
     {
-        Debug.Log("User: " + result.PlayFabId + " login successful");
+        var request = new LoginWithCustomIDRequest
+        {
+            CustomId = System.Guid.NewGuid().ToString(),
+            CreateAccount = true
+        };
+
+        PlayFabClientAPI.LoginWithCustomID(request,
+            delegate (LoginResult result)
+            {
+                var secondRequest = new AddUsernamePasswordRequest
+                {
+                    Email = email,
+                    Username = username,
+                    Password = password
+                };
+                PlayFabClientAPI.AddUsernamePassword(secondRequest, OnAddUsernamePasswordSuccess, OnSharedError);
+            }, 
+            OnSharedError);
+    }
+
+    private void OnAddUsernamePasswordSuccess(AddUsernamePasswordResult result)
+    {
+        var prevRequest = (AddUsernamePasswordRequest)result.Request;
+        Debug.Log("Username: " + prevRequest.Username + " with Email:" + prevRequest.Email + " has been created successfully");
     }
 
     private void OnSharedError(PlayFabError error)
