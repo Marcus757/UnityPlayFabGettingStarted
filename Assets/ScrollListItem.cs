@@ -20,8 +20,8 @@ public class ScrollListItem : MonoBehaviour
             return;
 
 
-        Groups groups = GameObject.Find("GamePanel").GetComponent<Groups>();
-        groups.RefreshPlayersToAddView();
+        GroupController groups = GameObject.Find("GamePanel").GetComponent<GroupController>();
+        //groups.RefreshPlayersToAddView();
     }
 
     //public bool IsSelected()

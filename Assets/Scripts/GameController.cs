@@ -9,28 +9,36 @@ using PlayFab.AuthenticationModels;
 
 public class GameController : MonoBehaviour
 {
-    public Authentication authentication;
     public Dropdown functionDropdown;
     public GameObject parameters;
     public GameObject parameterPrefab;
-
-    public Text scoreText;
-    private int score;
-    public GameObject loginPanel;
-    public GameObject registrationPanel;
-    public GameObject gamePanel;
-    public GameObject errorPanel;
+    public AuthenticationController authentication;
+    public BackgroundColorController backgroundColorChanger;
+    public GroupController groupController;
     public GameObject cube;
-    private string username;
-    private static string entityId;
-    private static string entityType;
+
     private Dictionary<string, FunctionCaller> apiDictionary;
+
+
+
+    //public Text scoreText;
+    //private int score;
+    //public GameObject loginPanel;
+    //public GameObject registrationPanel;
+    //public GameObject gamePanel;
+    //public GameObject errorPanel;
+    
+    //private string username;
+    //private static string entityId;
+    //private static string entityType;
+    
 
     // Use this for initialization
     void Start () {
         LoadApiDictionary();
         LoadDropDown();
         OnValueChangedDropDown();
+        cube.active = true;
     }
 	
 	// Update is called once per frame
@@ -58,6 +66,44 @@ public class GameController : MonoBehaviour
         createAccount.parameters.Add("Username");
         createAccount.parameters.Add("Password");
         apiDictionary.Add("Create account with email", createAccount);
+
+        FunctionCaller changeBackgroundColor = new FunctionCaller();
+        changeBackgroundColor.functionNoParams = ()=> backgroundColorChanger.ChangeBackgroundColor();
+        apiDictionary.Add("Change background color", changeBackgroundColor);
+
+        FunctionCaller saveBackgroundColor = new FunctionCaller();
+        saveBackgroundColor.functionNoParams = () => backgroundColorChanger.SaveBackgroundColor();
+        apiDictionary.Add("Save background color", saveBackgroundColor);
+
+        FunctionCaller getBackgroundColor = new FunctionCaller();
+        getBackgroundColor.functionNoParams = () => backgroundColorChanger.GetBackgroundColor();
+        apiDictionary.Add("Get background color", getBackgroundColor);
+
+        FunctionCaller createGroup = new FunctionCaller();
+        createGroup.function3Params = (adminUsername, password, groupName) => groupController.CreateGroup(adminUsername, password, groupName);
+        createGroup.parameters.Add("Admin Username");
+        createGroup.parameters.Add("Password");
+        createGroup.parameters.Add("Group Name");
+        apiDictionary.Add("Create group", createGroup);
+
+        FunctionCaller invitePlayerToGroup = new FunctionCaller();
+        invitePlayerToGroup.function4Params = 
+            (adminUsername, password, groupName, usernameToInvite) => 
+            groupController.InvitePlayerToGroup(adminUsername, password, groupName, usernameToInvite);
+        invitePlayerToGroup.parameters.Add("Admin Username");
+        invitePlayerToGroup.parameters.Add("Password");
+        invitePlayerToGroup.parameters.Add("Group Name");
+        invitePlayerToGroup.parameters.Add("Username To Invite");
+        apiDictionary.Add("Invite player to group", invitePlayerToGroup);
+
+        FunctionCaller acceptInvitationToGroup = new FunctionCaller();
+        acceptInvitationToGroup.function3Params = 
+            (usernameToAccept, password, groupName) => 
+            groupController.AcceptInvitationToGroup(usernameToAccept, password, groupName);
+        acceptInvitationToGroup.parameters.Add("Username To Accept");
+        acceptInvitationToGroup.parameters.Add("Password");
+        acceptInvitationToGroup.parameters.Add("Group Name");
+        apiDictionary.Add("Accept invitation to group", acceptInvitationToGroup);
     }
     
     private void LoadDropDown()
@@ -88,7 +134,7 @@ public class GameController : MonoBehaviour
     public void OnClickExecute()
     {
         FunctionCaller function = GetFunction();
-        string param1, param2, param3;
+        string param1, param2, param3, param4;
 
         switch (function.parameters.Count)
         {
@@ -107,6 +153,13 @@ public class GameController : MonoBehaviour
                 param3 = parameters.transform.GetChild(2).Find("Text").GetComponent<Text>().text;
                 function.function3Params.Invoke(param1, param2, param3);
                 break;
+            case 4:
+                param1 = parameters.transform.GetChild(0).Find("Text").GetComponent<Text>().text;
+                param2 = parameters.transform.GetChild(1).Find("Text").GetComponent<Text>().text;
+                param3 = parameters.transform.GetChild(2).Find("Text").GetComponent<Text>().text;
+                param4 = parameters.transform.GetChild(3).Find("Text").GetComponent<Text>().text;
+                function.function4Params.Invoke(param1, param2, param3, param4);
+                break;
             default:
                 function.functionNoParams.Invoke();
                 break;
@@ -118,124 +171,7 @@ public class GameController : MonoBehaviour
         var functionName = functionDropdown.options.ElementAt(functionDropdown.value).text;
         return apiDictionary[functionName];
     }
-
-
     
-
-    public void ShowGame()
-    {
-        GetEntityToken();
-        var usernameText = gamePanel.GetComponentsInChildren<Text>().ToList().Find(x => x.name == "UsernameLabel");
-        usernameText.text = "Username: " + username;
-        cube.active = true;
-    }
-
-    public void ChangeColor()
-    {
-        Camera.main.backgroundColor = Random.ColorHSV();
-    }
-
-    public void SaveColor()
-    {
-        var data = new Dictionary<string, object>()
-        {
-            { "R", Camera.main.backgroundColor.r },
-            { "G", Camera.main.backgroundColor.g },
-            { "B", Camera.main.backgroundColor.b },
-            { "A", Camera.main.backgroundColor.a },
-        };
-
-        var dataList = new List<SetObject>()
-        {
-            new SetObject()
-            {
-                ObjectName = "BackgroundColor",
-                DataObject = data
-            }
-        };
-
-        var request = new SetObjectsRequest()
-        {
-            Entity = new PlayFab.DataModels.EntityKey { Id = entityId, Type = entityType },
-            Objects = dataList
-
-        };
-        PlayFabDataAPI.SetObjects(request, OnSetObjectsSuccess, OnSetObjectsFailure);
-    }
-
-    private void OnSetObjectsSuccess(SetObjectsResponse response)
-    {
-        Debug.Log(response.ProfileVersion);
-    }
-
-    private void OnSetObjectsFailure(PlayFabError error)
-    {
-        Debug.Log("SetObjects error");
-        Debug.LogError(error.GenerateErrorReport());
-    }
-
-    private void GetEntityToken()
-    {
-        PlayFabAuthenticationAPI.GetEntityToken(new GetEntityTokenRequest(), OnGetEntityTokenSuccess, OnGetEntityTokenFailure);
-    }
-
-    private void OnGetEntityTokenSuccess(GetEntityTokenResponse response)
-    {
-        entityId = response.Entity.Id;
-        entityType = response.Entity.Type;
-
-        gamePanel.active = true;
-        SetBackgroundColor();
-    }
-
-    private void OnGetEntityTokenFailure(PlayFabError error)
-    {
-        Debug.Log("GetEntityToken error");
-        Debug.LogError(error.GenerateErrorReport());
-    }
-
-    private void SetBackgroundColor()
-    {
-        var request = new GetObjectsRequest
-        {
-            Entity = new PlayFab.DataModels.EntityKey { Id = entityId, Type = entityType }
-        };
-
-        PlayFabDataAPI.GetObjects(request, OnGetObjectsSuccess, OnGetObjectsFailure);
-    }
-
-    private void OnGetObjectsSuccess(GetObjectsResponse response)
-    {
-        ObjectResult result = null;
-        response.Objects.TryGetValue("BackgroundColor", out result);
-
-        if (result != null)
-        {
-            BackgroundColor backgroundColor = JsonUtility.FromJson<BackgroundColor>(result.DataObject.ToString());
-            Camera.main.backgroundColor = new Color(backgroundColor.R, backgroundColor.G, backgroundColor.B, backgroundColor.A);
-        }
-    }
-
-    private void OnGetObjectsFailure(PlayFabError error)
-    {
-        Debug.Log("OnGetObjects error");
-        Debug.LogError(error.GenerateErrorReport());
-    }
-
-    public static string getEntityId()
-    {
-        return entityId;
-    }
-
-    public static string getEntityType()
-    {
-        return entityType;
-    }
-
-
-
-
-
     public void OnScoreButtonClick()
     {
         UpdateScore();
@@ -243,7 +179,7 @@ public class GameController : MonoBehaviour
 
     private void UpdateScore()
     {
-        score++;
-        scoreText.text = "Score: " + score;
+        //score++;
+        //scoreText.text = "Score: " + score;
     }
 }

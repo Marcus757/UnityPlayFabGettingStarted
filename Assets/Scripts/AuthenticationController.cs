@@ -4,7 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Authentication : MonoBehaviour
+public class AuthenticationController : MonoBehaviour
 {
 
     // Logs in user as a guest
