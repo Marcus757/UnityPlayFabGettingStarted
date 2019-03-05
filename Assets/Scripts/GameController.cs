@@ -14,6 +14,7 @@ public class GameController : MonoBehaviour
     public GroupController groupController;
     public APIAccessPolicyController apiAccessPolicyController;
     public DropTableController dropTableController;
+    public PlayerInventoryController playerInventoryController;
     public GameObject cube;
     public Text scoreText;
 
@@ -108,9 +109,32 @@ public class GameController : MonoBehaviour
             dropTableController.GrantRandomItemToUser(adminUsername, password, usernameReceivingItem, dropTableId);
         grantRandomItemToUser.parameters.Add("Admin Username");
         grantRandomItemToUser.parameters.Add("Password");
-        grantRandomItemToUser.parameters.Add("Username receiving item");
-        grantRandomItemToUser.parameters.Add("Drop table id");
+        grantRandomItemToUser.parameters.Add("Username Receiving Item");
+        grantRandomItemToUser.parameters.Add("Drop Table Id");
         apiDictionary.Add("Grant user random item", grantRandomItemToUser);
+
+        FunctionCaller purchaseItem = new FunctionCaller();
+        purchaseItem.function4Params = 
+            (username, password, itemId, price) => 
+            playerInventoryController.PurchaseItem(username, password, itemId, price);
+        purchaseItem.parameters.Add("Username");
+        purchaseItem.parameters.Add("Password");
+        purchaseItem.parameters.Add("Item Id");
+        purchaseItem.parameters.Add("Price");
+        apiDictionary.Add("Purchase item", purchaseItem);
+
+        FunctionCaller getInventory = new FunctionCaller();
+        getInventory.function2Params = (username, password) => playerInventoryController.GetInventory(username, password);
+        getInventory.parameters.Add("Username");
+        getInventory.parameters.Add("Password");
+        apiDictionary.Add("Get inventory", getInventory);
+
+        FunctionCaller consumeItem = new FunctionCaller();
+        consumeItem.function3Params = (username, password, itemId) => playerInventoryController.ConsumeItem(username, password, itemId);
+        consumeItem.parameters.Add("Username");
+        consumeItem.parameters.Add("Password");
+        consumeItem.parameters.Add("ItemId");
+        apiDictionary.Add("Consume item", consumeItem);
     }
     
     private void LoadDropDown()
