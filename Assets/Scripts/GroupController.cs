@@ -28,11 +28,11 @@ public class GroupController : MonoBehaviour
                             {
                                 Debug.Log("Group was successfully created: " + response.GroupName + " -  " + response.Group.Id);
                             },
-                            OnSharedError);
+                            SharedError.OnSharedError);
                     },
-                    OnSharedError);
+                    SharedError.OnSharedError);
             },
-            OnSharedError);
+            SharedError.OnSharedError);
     }
 
     public void InvitePlayerToGroup(string adminUsername, string password, string groupName, string usernameToAdd)
@@ -65,13 +65,13 @@ public class GroupController : MonoBehaviour
                                             " successfully added username: " + usernameToAdd +
                                             " to group: " + groupName);
                                     },
-                                    OnSharedError);
+                                    SharedError.OnSharedError);
                             },
-                            OnSharedError);
+                            SharedError.OnSharedError);
                     },
-                    OnSharedError);
+                    SharedError.OnSharedError);
             },
-            OnSharedError);
+            SharedError.OnSharedError);
     }
 
     public void AcceptInvitationToGroup(string usernameToAccept, string password, string groupName)
@@ -102,13 +102,13 @@ public class GroupController : MonoBehaviour
                                     {
                                         Debug.Log("Username: " + usernameToAccept + " has accepted an invitation to group: " + groupName);
                                     },
-                                    OnSharedError);
+                                    SharedError.OnSharedError);
                             },
-                            OnSharedError);
+                            SharedError.OnSharedError);
                     },
-                    OnSharedError);
+                    SharedError.OnSharedError);
             },
-            OnSharedError);
+            SharedError.OnSharedError);
     }
 
     private PlayFab.GroupsModels.EntityKey ConvertEntityKey(PlayFab.AuthenticationModels.EntityKey entityKey)
@@ -119,10 +119,5 @@ public class GroupController : MonoBehaviour
     private PlayFab.GroupsModels.EntityKey ConvertEntityKey(PlayFab.ClientModels.EntityKey entityKey)
     {
         return new PlayFab.GroupsModels.EntityKey() { Id = entityKey.Id, Type = entityKey.Type };
-    }
-    
-    private void OnSharedError(PlayFabError error)
-    {
-        Debug.LogError(error.GenerateErrorReport());
     }
 }

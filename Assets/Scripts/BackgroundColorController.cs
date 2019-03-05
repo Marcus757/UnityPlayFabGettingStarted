@@ -14,12 +14,12 @@ public class BackgroundColorController : MonoBehaviour
 
     public void SaveBackgroundColor()
     {
-        PlayFabAuthenticationAPI.GetEntityToken(new GetEntityTokenRequest(), OnGetEntityTokenForSaveBackgroundColor, OnSharedError);
+        PlayFabAuthenticationAPI.GetEntityToken(new GetEntityTokenRequest(), OnGetEntityTokenForSaveBackgroundColor, SharedError.OnSharedError);
     }
 
     public void GetBackgroundColor()
     {
-        PlayFabAuthenticationAPI.GetEntityToken(new GetEntityTokenRequest(), OnGetEntityTokenForGetBackgroundColor, OnSharedError);
+        PlayFabAuthenticationAPI.GetEntityToken(new GetEntityTokenRequest(), OnGetEntityTokenForGetBackgroundColor, SharedError.OnSharedError);
     }
 
     private void OnGetEntityTokenForSaveBackgroundColor(GetEntityTokenResponse getEntityTokenResponse)
@@ -53,7 +53,7 @@ public class BackgroundColorController : MonoBehaviour
             {
                 Debug.Log("Background color has been saved");
             },
-            OnSharedError);
+            SharedError.OnSharedError);
     }
 
     private void OnGetEntityTokenForGetBackgroundColor(GetEntityTokenResponse response)
@@ -63,7 +63,7 @@ public class BackgroundColorController : MonoBehaviour
             Entity = new PlayFab.DataModels.EntityKey { Id = response.Entity.Id, Type = response.Entity.Type }
         };
 
-        PlayFabDataAPI.GetObjects(request, OnGetObjectsSuccess, OnSharedError);
+        PlayFabDataAPI.GetObjects(request, OnGetObjectsSuccess, SharedError.OnSharedError);
     }
 
     private void OnGetObjectsSuccess(GetObjectsResponse response)
@@ -78,10 +78,5 @@ public class BackgroundColorController : MonoBehaviour
             BackgroundColor backgroundColor = JsonUtility.FromJson<BackgroundColor>(result.DataObject.ToString());
             Camera.main.backgroundColor = new Color(backgroundColor.R, backgroundColor.G, backgroundColor.B, backgroundColor.A);
         }
-    }
-
-    private void OnSharedError(PlayFabError error)
-    {
-        Debug.LogError(error.GenerateErrorReport());
     }
 }

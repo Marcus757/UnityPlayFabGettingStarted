@@ -4,7 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class APIAccessPolicy : MonoBehaviour
+public class APIAccessPolicyController : MonoBehaviour
 {
     public void FetchApiPolicy()
     {
@@ -28,11 +28,8 @@ public class APIAccessPolicy : MonoBehaviour
                     Debug.Log("Resource: " + statement.Resource);
                 }
             },
-            OnSharedError);
+            SharedError.OnSharedError);
     }
 
-    private void OnSharedError(PlayFabError error)
-    {
-        Debug.LogError(error.GenerateErrorReport());
-    }
+    
 }

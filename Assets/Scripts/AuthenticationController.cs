@@ -1,7 +1,5 @@
 ﻿using PlayFab;
 using PlayFab.ClientModels;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class AuthenticationController : MonoBehaviour
@@ -20,7 +18,7 @@ public class AuthenticationController : MonoBehaviour
             {
                 Debug.Log("Guest login successful");
             }, 
-            OnSharedError);
+            SharedError.OnSharedError);
     }
 
     // Logs in user with PlayFab id
@@ -32,7 +30,7 @@ public class AuthenticationController : MonoBehaviour
             {
                 Debug.Log("User: " + result.PlayFabId + " login successful");
             },
-            OnSharedError);
+            SharedError.OnSharedError);
     }
     
 
@@ -53,19 +51,14 @@ public class AuthenticationController : MonoBehaviour
                     Username = username,
                     Password = password
                 };
-                PlayFabClientAPI.AddUsernamePassword(secondRequest, OnAddUsernamePasswordSuccess, OnSharedError);
+                PlayFabClientAPI.AddUsernamePassword(secondRequest, OnAddUsernamePasswordSuccess, SharedError.OnSharedError);
             }, 
-            OnSharedError);
+            SharedError.OnSharedError);
     }
 
     private void OnAddUsernamePasswordSuccess(AddUsernamePasswordResult result)
     {
         var prevRequest = (AddUsernamePasswordRequest)result.Request;
         Debug.Log("Username: " + prevRequest.Username + " with Email:" + prevRequest.Email + " has been created successfully");
-    }
-
-    private void OnSharedError(PlayFabError error)
-    {
-        Debug.LogError(error.GenerateErrorReport());
     }
 }

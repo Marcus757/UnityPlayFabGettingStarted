@@ -1,11 +1,8 @@
-﻿using PlayFab;
-using PlayFab.ClientModels;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using System.Linq;
 using System.Collections.Generic;
-using PlayFab.DataModels;
-using PlayFab.AuthenticationModels;
+using System;
 
 public class GameController : MonoBehaviour
 {
@@ -15,30 +12,21 @@ public class GameController : MonoBehaviour
     public AuthenticationController authentication;
     public BackgroundColorController backgroundColorChanger;
     public GroupController groupController;
+    public APIAccessPolicyController apiAccessPolicyController;
+    public DropTableController dropTableController;
     public GameObject cube;
+    public Text scoreText;
 
     private Dictionary<string, FunctionCaller> apiDictionary;
-
-
-
-    //public Text scoreText;
-    //private int score;
-    //public GameObject loginPanel;
-    //public GameObject registrationPanel;
-    //public GameObject gamePanel;
-    //public GameObject errorPanel;
-    
-    //private string username;
-    //private static string entityId;
-    //private static string entityType;
-    
+    private int score;
+    private static int scoreMultiplier = 1;
 
     // Use this for initialization
     void Start () {
         LoadApiDictionary();
         LoadDropDown();
         OnValueChangedDropDown();
-        cube.active = true;
+        cube.SetActive(true);
     }
 	
 	// Update is called once per frame
@@ -104,6 +92,25 @@ public class GameController : MonoBehaviour
         acceptInvitationToGroup.parameters.Add("Password");
         acceptInvitationToGroup.parameters.Add("Group Name");
         apiDictionary.Add("Accept invitation to group", acceptInvitationToGroup);
+
+        FunctionCaller fetchApiPolicy = new FunctionCaller();
+        fetchApiPolicy.functionNoParams = () => apiAccessPolicyController.FetchApiPolicy();
+        apiDictionary.Add("Fetch API access policy", fetchApiPolicy);
+
+        FunctionCaller readDropTableData = new FunctionCaller();
+        readDropTableData.function1Param = (tableId) => dropTableController.ReadDropTableData(tableId);
+        readDropTableData.parameters.Add("Drop table id");
+        apiDictionary.Add("Read drop table data", readDropTableData);
+
+        FunctionCaller grantRandomItemToUser = new FunctionCaller();
+        grantRandomItemToUser.function4Params = 
+            (adminUsername, password, usernameReceivingItem, dropTableId) => 
+            dropTableController.GrantRandomItemToUser(adminUsername, password, usernameReceivingItem, dropTableId);
+        grantRandomItemToUser.parameters.Add("Admin Username");
+        grantRandomItemToUser.parameters.Add("Password");
+        grantRandomItemToUser.parameters.Add("Username receiving item");
+        grantRandomItemToUser.parameters.Add("Drop table id");
+        apiDictionary.Add("Grant user random item", grantRandomItemToUser);
     }
     
     private void LoadDropDown()
@@ -171,15 +178,15 @@ public class GameController : MonoBehaviour
         var functionName = functionDropdown.options.ElementAt(functionDropdown.value).text;
         return apiDictionary[functionName];
     }
-    
-    public void OnScoreButtonClick()
-    {
-        UpdateScore();
-    }
 
-    private void UpdateScore()
+    public void UpdateScore()
     {
-        //score++;
-        //scoreText.text = "Score: " + score;
+        List<PowerUp> powerUps = dropTableController.GetPowerUps();
+        powerUps.RemoveAll(powerUp => DateTime.Now.ToUniversalTime() >= powerUp.expirationDateTime);
+        PowerUp scoreMultiplierPowerUp = powerUps.FirstOrDefault();
+        scoreMultiplier = scoreMultiplierPowerUp == null ? 1 : scoreMultiplierPowerUp.multiplierAmount;
+        score = score + scoreMultiplier * 1;
+        scoreText.text = "Score: " + score;
+        Debug.Log("Score multiplier: " + scoreMultiplier + "x, " + scoreText.text);
     }
 }
