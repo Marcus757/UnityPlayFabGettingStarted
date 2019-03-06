@@ -8,14 +8,6 @@ using UnityEngine;
 
 public class DropTableController : MonoBehaviour
 {
-    public class MultiplerAmount
-    {
-        public int multiplierAmount;
-    }
-
-    private List<PowerUp> powerUps = new List<PowerUp>();
-    private Dictionary<string, PlayFab.ClientModels.CatalogItem> catalog = new Dictionary<string, PlayFab.ClientModels.CatalogItem>();
-
     public void ReadDropTableData(string dropTableId)
     {
         var getRandomResultTables = new GetRandomResultTablesRequest() { TableIDs = new List<string> { dropTableId } };
@@ -37,7 +29,7 @@ public class DropTableController : MonoBehaviour
 
     public void GrantRandomItemToUser(string adminUsername, string password, string usernameReceivingItem, string dropTableId)
     {
-        catalog.Clear();
+        GameController.catalog.Clear();
         var loginWithPlayFabRequest = new LoginWithPlayFabRequest { Username = adminUsername, Password = password };
 
         PlayFabClientAPI.LoginWithPlayFab(loginWithPlayFabRequest,
@@ -68,7 +60,7 @@ public class DropTableController : MonoBehaviour
                                             {
                                                 getCatalogItemsResult.Catalog.ForEach(catalogItem =>
                                                 {
-                                                    catalog.Add(catalogItem.ItemId, catalogItem);
+                                                    GameController.catalog.Add(catalogItem.ItemId, catalogItem);
                                                 });
 
                                                 Debug.Log("Items granted:");
@@ -89,15 +81,10 @@ public class DropTableController : MonoBehaviour
             SharedError.OnSharedError);
     }
 
-    public List<PowerUp> GetPowerUps()
-    {
-        return powerUps.OrderByDescending(powerUp => powerUp.multiplierAmount).ToList();
-    }
-
     private void AddPowerUp(GrantedItemInstance item)
     {
         PlayFab.ClientModels.CatalogItem catalogItem;
-        catalog.TryGetValue(item.ItemId, out catalogItem);
+        GameController.catalog.TryGetValue(item.ItemId, out catalogItem);
 
         if (catalogItem != null)
         {
@@ -106,7 +93,7 @@ public class DropTableController : MonoBehaviour
             powerUp.displayName = catalogItem.DisplayName;
             powerUp.expirationDateTime = item.Expiration;
             powerUp.multiplierAmount = JsonUtility.FromJson<MultiplerAmount>(catalogItem.CustomData).multiplierAmount;
-            powerUps.Add(powerUp);
+            GameController.powerUps.Add(powerUp);
         }
     }
 }

@@ -74,7 +74,26 @@ public class PlayerInventoryController : MonoBehaviour
                         PlayFabClientAPI.ConsumeItem(consumeItemRequest,
                             delegate (ConsumeItemResult consumeItemResult)
                             {
-                                Debug.Log("Item Consumed: " + consumeItemResult.ItemInstanceId);
+                                PlayFabClientAPI.GetCatalogItems(new PlayFab.ClientModels.GetCatalogItemsRequest(),
+                                    delegate (PlayFab.ClientModels.GetCatalogItemsResult getCatalogItemsResult)
+                                    {
+                                        getCatalogItemsResult.Catalog.ForEach(catalogItem =>
+                                        {
+                                            GameController.catalog.Clear();
+                                            GameController.catalog.Add(catalogItem.ItemId, catalogItem);
+
+                                            Debug.Log("Item Consumed: " + consumeItemResult.ItemInstanceId);
+
+                                            if (string.Equals(inventoryItem.ItemId, PowerUp.multiplier2x) ||
+                                                string.Equals(inventoryItem.ItemId, PowerUp.multiplier5x) ||
+                                                string.Equals(inventoryItem.ItemId, PowerUp.multiplier10x) ||
+                                                string.Equals(inventoryItem.ItemId, PowerUp.multiplier100x))
+                                            {
+                                                AddPowerUp(inventoryItem);
+                                            }
+                                        });
+                                    },
+                                    SharedError.OnSharedError);
                             },
                             SharedError.OnSharedError);
                     }
@@ -86,5 +105,21 @@ public class PlayerInventoryController : MonoBehaviour
                 SharedError.OnSharedError);
             },
             SharedError.OnSharedError);
+    }
+
+    private void AddPowerUp(ItemInstance item)
+    {
+        PlayFab.ClientModels.CatalogItem catalogItem;
+        GameController.catalog.TryGetValue(item.ItemId, out catalogItem);
+
+        if (catalogItem != null)
+        {
+            PowerUp powerUp = new PowerUp();
+            powerUp.itemId = catalogItem.ItemId;
+            powerUp.displayName = catalogItem.DisplayName;
+            powerUp.expirationDateTime = item.Expiration;
+            powerUp.multiplierAmount = JsonUtility.FromJson<MultiplerAmount>(catalogItem.CustomData).multiplierAmount;
+            GameController.powerUps.Add(powerUp);
+        }
     }
 }

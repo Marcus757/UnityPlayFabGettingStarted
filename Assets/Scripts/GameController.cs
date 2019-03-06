@@ -17,6 +17,8 @@ public class GameController : MonoBehaviour
     public PlayerInventoryController playerInventoryController;
     public GameObject cube;
     public Text scoreText;
+    public static List<PowerUp> powerUps = new List<PowerUp>();
+    public static Dictionary<string, PlayFab.ClientModels.CatalogItem> catalog = new Dictionary<string, PlayFab.ClientModels.CatalogItem>();
 
     private Dictionary<string, FunctionCaller> apiDictionary;
     private int score;
@@ -205,7 +207,7 @@ public class GameController : MonoBehaviour
 
     public void UpdateScore()
     {
-        List<PowerUp> powerUps = dropTableController.GetPowerUps();
+        powerUps = powerUps.OrderByDescending(powerUp => powerUp.multiplierAmount).ToList();
         powerUps.RemoveAll(powerUp => DateTime.Now.ToUniversalTime() >= powerUp.expirationDateTime);
         PowerUp scoreMultiplierPowerUp = powerUps.FirstOrDefault();
         scoreMultiplier = scoreMultiplierPowerUp == null ? 1 : scoreMultiplierPowerUp.multiplierAmount;
