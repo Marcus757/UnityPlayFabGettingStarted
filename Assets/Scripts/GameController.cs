@@ -15,13 +15,15 @@ public class GameController : MonoBehaviour
     public APIAccessPolicyController apiAccessPolicyController;
     public DropTableController dropTableController;
     public PlayerInventoryController playerInventoryController;
+    public CouponController couponController;
+    public StatisticsController statisticsController;
     public GameObject cube;
     public Text scoreText;
+    public static int score;
     public static List<PowerUp> powerUps = new List<PowerUp>();
     public static Dictionary<string, PlayFab.ClientModels.CatalogItem> catalog = new Dictionary<string, PlayFab.ClientModels.CatalogItem>();
 
     private Dictionary<string, FunctionCaller> apiDictionary;
-    private int score;
     private static int scoreMultiplier = 1;
 
     // Use this for initialization
@@ -135,8 +137,21 @@ public class GameController : MonoBehaviour
         consumeItem.function3Params = (username, password, itemId) => playerInventoryController.ConsumeItem(username, password, itemId);
         consumeItem.parameters.Add("Username");
         consumeItem.parameters.Add("Password");
-        consumeItem.parameters.Add("ItemId");
+        consumeItem.parameters.Add("Item Id");
         apiDictionary.Add("Consume item", consumeItem);
+
+        FunctionCaller redeemCoupon = new FunctionCaller();
+        redeemCoupon.function3Params = (username, password, couponCode) => couponController.RedeemCoupon(username, password, couponCode);
+        redeemCoupon.parameters.Add("Username");
+        redeemCoupon.parameters.Add("Password");
+        redeemCoupon.parameters.Add("Coupon Code");
+        apiDictionary.Add("Redeem Coupon", redeemCoupon);
+
+        FunctionCaller updatePlayerStatistic = new FunctionCaller();
+        updatePlayerStatistic.function2Params = (username, password) => statisticsController.UpdatePlayerStatistics(username, password);
+        updatePlayerStatistic.parameters.Add("Username");
+        updatePlayerStatistic.parameters.Add("Password");
+        apiDictionary.Add("Update player statistic", updatePlayerStatistic);
     }
     
     private void LoadDropDown()

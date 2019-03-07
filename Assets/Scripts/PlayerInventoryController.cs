@@ -77,21 +77,22 @@ public class PlayerInventoryController : MonoBehaviour
                                 PlayFabClientAPI.GetCatalogItems(new PlayFab.ClientModels.GetCatalogItemsRequest(),
                                     delegate (PlayFab.ClientModels.GetCatalogItemsResult getCatalogItemsResult)
                                     {
+                                        GameController.catalog.Clear();
+
                                         getCatalogItemsResult.Catalog.ForEach(catalogItem =>
                                         {
-                                            GameController.catalog.Clear();
                                             GameController.catalog.Add(catalogItem.ItemId, catalogItem);
-
-                                            Debug.Log("Item Consumed: " + consumeItemResult.ItemInstanceId);
-
-                                            if (string.Equals(inventoryItem.ItemId, PowerUp.multiplier2x) ||
-                                                string.Equals(inventoryItem.ItemId, PowerUp.multiplier5x) ||
-                                                string.Equals(inventoryItem.ItemId, PowerUp.multiplier10x) ||
-                                                string.Equals(inventoryItem.ItemId, PowerUp.multiplier100x))
-                                            {
-                                                AddPowerUp(inventoryItem);
-                                            }
                                         });
+
+                                        Debug.Log("Item Consumed: " + consumeItemResult.ItemInstanceId);
+
+                                        if (string.Equals(inventoryItem.ItemId, PowerUp.multiplier2x) ||
+                                            string.Equals(inventoryItem.ItemId, PowerUp.multiplier5x) ||
+                                            string.Equals(inventoryItem.ItemId, PowerUp.multiplier10x) ||
+                                            string.Equals(inventoryItem.ItemId, PowerUp.multiplier100x))
+                                        {
+                                            AddPowerUp(inventoryItem);
+                                        }
                                     },
                                     SharedError.OnSharedError);
                             },
